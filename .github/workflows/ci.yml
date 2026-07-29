@@ -1,0 +1,42 @@
+name: Rust
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build
+        run: cargo build
+
+      - name: Run tests
+        run: cargo test
+
+      - name: Clippy
+        run: cargo clippy
+
+      - name: Build hello example
+        run: cargo build -p hello --bin hello_app
+
+      - name: Clippy hello example
+        run: cargo clippy -p hello
+
+      - name: Build hello example with sandbox
+        run: cargo build -p hello --features=sandbox

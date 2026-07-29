@@ -1,0 +1,59 @@
+# This example is based on cefsimple:
+# https://github.com/tauri-apps/cef-rs/tree/dev/examples/cefsimple
+# To run without sandbox, use: `cargo run -p hello --bin hello_app`.
+# To run with sandbox, use: `cargo build -p hello --features=sandbox`, then run `.\bootstrap --module=hello` from the build output directory.
+[package]
+name = "hello"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[[bin]]
+name = "hello_app"
+path = "src/main.rs"
+
+[[bin]]
+name = "hello_helper"
+
+[features]
+sandbox = ["cef/sandbox"]
+linux-x11 = ["x11-dl"]
+
+[package.metadata.bootstrap]
+version = "5.3.8"
+
+[dependencies]
+anyhow = "1.0.104"
+cef = { workspace = true, features = ["build-util"] }
+cef-dll-sys.workspace = true
+cef-resource-handlers = { path = "../.." }
+maud = "0.27.0"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6.4"
+objc2-foundation = "0.3.2"
+objc2-app-kit = { version = "0.3.2", default-features = false, features = [
+    "NSApplication",
+    "NSEvent",
+    "NSResponder",
+    "NSUserInterfaceValidation",
+    "NSView",
+    "NSWindow",
+] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.61.2", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+x11-dl = { version = "2.21.0", optional = true }
+
+[build-dependencies]
+anyhow = "1.0.104"
+embed-resource = "3.0.11"
+ureq = "3.3.0"
