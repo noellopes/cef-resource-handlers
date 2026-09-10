@@ -10,7 +10,7 @@ cef-dll-sys = "152.0.0"
 [package]
 # Package information
 name = "cef-resource-handlers"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 
 # Package metadata
