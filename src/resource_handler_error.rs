@@ -1,3 +1,4 @@
+use std::os::raw::c_int;
 use std::sync::{MutexGuard, PoisonError};
 
 /// Unified error type for resource handler operations
@@ -23,6 +24,12 @@ pub enum ResourceHandlerError {
 
     #[error("Failed to register scheme {0}")]
     RegisterSchemeError(String),
+
+    #[error("Cannot read negative amount of bytes: {0}")]
+    InvalidReadSize(c_int),
+
+    #[error("Cannot skip negative amount of bytes: {0}")]
+    InvalidSkipSize(i64),
 
     #[error("An error has occurred: {0}")]
     InternalError(String),

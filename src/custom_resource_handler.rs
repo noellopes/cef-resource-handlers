@@ -39,26 +39,28 @@ wrap_resource_handler! {
             bytes_read: Option<&mut c_int>,
             _callback: Option<&mut ResourceReadCallback>,
         ) -> c_int {
-            let bytes_to_read = bytes_to_read as usize;
-
             let result = match bytes_to_read {
                 0 => Ok(0),
-                _ => self.state.with_mut(|state| state.read(data_out, bytes_to_read)).flatten(),
+                bytes_to_read if bytes_to_read > 0 => self
+                    .state
+                    .with_mut(|state| state.read(data_out, bytes_to_read as usize))
+                    .flatten(),
+                _ => Err(ResourceHandlerError::InvalidReadSize(bytes_to_read)),
             };
 
-            match result {
-                Ok(bytes_successfully_read) => {
-                    if let Some(bytes_read) = bytes_read {
-                        *bytes_read = bytes_successfully_read as c_int;
-                    }
-
-                    (bytes_successfully_read > 0) as c_int
-                }
+            let bytes_successfully_read = match result {
+                Ok(bytes) => bytes as c_int,
                 Err(error) => {
                     eprintln!("[ResourceHandler::read] {error}");
                     -2 // ERR_FAILED
                 }
+            };
+
+            if let Some(bytes_read) = bytes_read {
+                *bytes_read = bytes_successfully_read;
             }
+
+            (bytes_successfully_read > 0) as c_int
         }
 
         fn skip(
@@ -67,26 +69,27 @@ wrap_resource_handler! {
             bytes_skipped: Option<&mut i64>,
             _callback: Option<&mut ResourceSkipCallback>,
         ) -> c_int {
-            let bytes_to_skip = bytes_to_skip as usize;
-
             let result = match bytes_to_skip {
                 0 => Ok(0),
-                _ => self.state.with_mut(|state| state.progress.advance(bytes_to_skip)),
+                bytes_to_skip if bytes_to_skip > 0 => self
+                    .state
+                    .with_mut(|state| state.progress.advance(bytes_to_skip as usize)),
+                _ => Err(ResourceHandlerError::InvalidSkipSize(bytes_to_skip)),
             };
 
-            match result {
-                Ok(bytes_advanced) => {
-                    if let Some(bytes_skipped) = bytes_skipped {
-                        *bytes_skipped = bytes_advanced as i64;
-                    }
-
-                    (bytes_advanced > 0) as c_int
-                }
+            let bytes_advanced  = match result {
+                Ok(bytes) => bytes as i64,
                 Err(error) => {
                     eprintln!("[ResourceHandler::skip] {error}");
                     -2 // ERR_FAILED
                 }
+            };
+
+            if let Some(bytes_skipped) = bytes_skipped {
+                *bytes_skipped = bytes_advanced;
             }
+
+            (bytes_advanced > 0) as c_int
         }
 
         fn response_headers(
