@@ -3,8 +3,17 @@
 /// files, network resources, or dynamically generated data, exposing both
 /// metadata and byte-level access to the content.
 pub trait ContentProvider {
-    /// Creates a content provider for the given request.
-    fn from_request(request_info: &crate::RequestInfo) -> Result<Self, crate::ResourceHandlerError>
+    /// `Context` is a shared application context (see [`crate::SharedContext`])
+    /// passed to [`Self::from_request`].
+    ///
+    /// Use `()` when no application context is needed.
+    type Context: crate::SharedContext;
+
+    /// Creates a content provider for the given request and context.
+    fn from_request(
+        request_info: &crate::RequestInfo,
+        context: &Self::Context,
+    ) -> Result<Self, crate::ResourceHandlerError>
     where
         Self: Sized;
 

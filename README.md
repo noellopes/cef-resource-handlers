@@ -30,7 +30,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cef-resource-handlers = "0.1"
+cef-resource-handlers = "0.2"
 ```
 
 ## Quick Start
@@ -89,7 +89,9 @@ const APP_SCHEME: &str = "app";
 struct MyPage;
 
 impl WebPageHandler for MyPage {
-    fn from_request(_request_info: &RequestInfo) -> Result<Self, ResourceHandlerError> {
+    type Context = ();
+
+    fn from_request(_request_info: &RequestInfo, _context: &()) -> Result<Self, ResourceHandlerError> {
         Ok(Self)
     }
 
@@ -108,6 +110,19 @@ fn register_web_pages() {
 
 Use `CustomResourceHandlerFactory<T>` when you need full control over content generation and streaming.
 
+Providers that need shared application state can use `register_with_context` instead of `register`:
+
+```rust
+let context = MyContext::new();
+CustomResourceHandlerFactory::<MyProvider>::register_with_context(
+    "api",
+    None,
+    context,
+)?;
+```
+
+The context must implement `Clone` and is shared with each provider created by the factory.
+
 ```rust
 use cef_resource_handlers::{
     ContentProvider, CustomResourceHandlerFactory, RequestInfo, ResourceHandlerError,
@@ -118,7 +133,9 @@ struct PlainTextProvider {
 }
 
 impl ContentProvider for PlainTextProvider {
-    fn from_request(_request_info: &RequestInfo) -> Result<Self, ResourceHandlerError> {
+    type Context = ();
+
+    fn from_request(_request_info: &RequestInfo, _context: &()) -> Result<Self, ResourceHandlerError> {
         Ok(Self {
             body: b"Hello from custom provider".to_vec(),
         })
@@ -185,6 +202,30 @@ Run it:
 ```bash
 cargo run -p hello --bin hello_app
 ```
+## Upgrading from 0.1.x
+
+Version `0.2` adds shared context support and includes breaking changes to the
+`WebPageHandler` and `ContentProvider` traits. Add a `Context` type and accept
+the context in `from_request`. Use `()` when the handler does not need shared
+state:
+
+```rust
+impl WebPageHandler for MyPage {
+    type Context = ();
+
+    fn from_request(
+        _request_info: &RequestInfo,
+        _context: &Self::Context,
+    ) -> Result<Self, ResourceHandlerError> {
+        Ok(Self)
+    }
+}
+```
+
+The same change applies to `ContentProvider`. For shared state, replace
+`register` with `register_with_context` and pass a `Clone + Send + Sync + 'static`
+context. Version `0.2` also updates the CEF dependencies from `152.0.0` to
+`152.3.0`; align any directly pinned CEF dependencies in your application.
 
 ## License
 

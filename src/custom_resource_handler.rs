@@ -2,11 +2,12 @@ use crate::read_progress::ReadProgress;
 use crate::shared_state::SharedState;
 use crate::{ContentProvider, ResourceHandlerError};
 use cef::*;
-use std::{marker::PhantomData, os::raw::c_int};
+use std::os::raw::c_int;
 
 wrap_resource_handler! {
-    struct CustomResourceHandler<T: ContentProvider> {
+    struct CustomResourceHandler<T: ContentProvider + 'static> {
         state: SharedState<ContentProviderState<T>>,
+        context: T::Context,
     }
 
     impl ResourceHandler {
@@ -77,7 +78,7 @@ wrap_resource_handler! {
                 _ => Err(ResourceHandlerError::InvalidSkipSize(bytes_to_skip)),
             };
 
-            let bytes_advanced  = match result {
+            let bytes_advanced = match result {
                 Ok(bytes) => bytes as i64,
                 Err(error) => {
                     eprintln!("[ResourceHandler::skip] {error}");
@@ -102,7 +103,9 @@ wrap_resource_handler! {
                 return;
             };
 
-            let result = self.state.with(|state| state.response_headers(response, response_length));
+            let result = self
+                .state
+                .with(|state| state.response_headers(response, response_length));
 
             if let Err(error) = result {
                 eprintln!("[ContentProvider::response_headers]: {error}");
@@ -112,15 +115,15 @@ wrap_resource_handler! {
     }
 }
 
-impl<T: ContentProvider> CustomResourceHandler<T> {
+impl<T: ContentProvider + 'static> CustomResourceHandler<T> {
     fn open(&self, request: &Request) -> Result<(), ResourceHandlerError> {
         let request_info = crate::RequestInfo::from_request(request)?;
-        let content_provider = T::from_request(&request_info)?;
+        let content_provider = T::from_request(&request_info, &self.context)?;
         self.state.set(ContentProviderState::new(content_provider))
     }
 }
 
-struct ContentProviderState<T: ContentProvider> {
+struct ContentProviderState<T> {
     content_provider: T,
     progress: ReadProgress,
 }
@@ -191,8 +194,8 @@ const NO_CACHE_HEADERS: [(&str, &str); 3] = [
 ];
 
 wrap_scheme_handler_factory! {
-    pub struct CustomResourceHandlerFactory<T: ContentProvider> {
-        _phantom: PhantomData<T>,
+    pub struct CustomResourceHandlerFactory<T: ContentProvider + 'static> {
+        context: T::Context,
     }
 
     impl SchemeHandlerFactory {
@@ -203,20 +206,25 @@ wrap_scheme_handler_factory! {
             _scheme_name: Option<&CefString>,
             _request: Option<&mut Request>,
         ) -> Option<ResourceHandler> {
-            Some(CustomResourceHandler::<T>::new(SharedState::new()))
+            Some(CustomResourceHandler::<T>::new(
+                SharedState::new(),
+                self.context.clone(),
+            ))
         }
     }
 }
 
-impl<T: ContentProvider> CustomResourceHandlerFactory<T> {
-    /// Registers the `CustomResourceHandlerFactory` for a given scheme and optional domain.
-    pub fn register(
+impl<T: ContentProvider + 'static> CustomResourceHandlerFactory<T> {
+    /// Registers the `CustomResourceHandlerFactory` for a given scheme and optional domain,
+    /// sharing `context` across every content provider it creates.
+    pub fn register_with_context(
         scheme_name: &str,
         domain_name: Option<&str>,
+        context: T::Context,
     ) -> Result<(), ResourceHandlerError> {
         let scheme_name = CefString::from(scheme_name);
         let domain_name = domain_name.map(CefString::from);
-        let mut factory = Self::new(PhantomData);
+        let mut factory = Self::new(context);
 
         if register_scheme_handler_factory(
             Some(&scheme_name),
@@ -236,5 +244,16 @@ impl<T: ContentProvider> CustomResourceHandlerFactory<T> {
         } else {
             Ok(())
         }
+    }
+}
+
+impl<T: ContentProvider<Context = ()> + 'static> CustomResourceHandlerFactory<T> {
+    /// Registers the factory for a given scheme and optional domain. Use
+    /// [`Self::register_with_context`] for providers that need shared state.
+    pub fn register(
+        scheme_name: &str,
+        domain_name: Option<&str>,
+    ) -> Result<(), ResourceHandlerError> {
+        Self::register_with_context(scheme_name, domain_name, ())
     }
 }

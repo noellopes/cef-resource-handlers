@@ -49,7 +49,12 @@ impl LocalFileContentProvider {
 }
 
 impl crate::ContentProvider for LocalFileContentProvider {
-    fn from_request(request_info: &crate::RequestInfo) -> Result<Self, ResourceHandlerError> {
+    type Context = ();
+
+    fn from_request(
+        request_info: &crate::RequestInfo,
+        _context: &Self::Context,
+    ) -> Result<Self, crate::ResourceHandlerError> {
         let file_path = Self::full_path(&request_info.path);
         Self::from_file_path(&file_path)
             .map_err(|error| ResourceHandlerError::OpenFileError(file_path, error.to_string()))

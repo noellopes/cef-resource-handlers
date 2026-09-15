@@ -2,16 +2,19 @@ use crate::{ContentProvider, CustomResourceHandlerFactory, WebPageHandler};
 use std::marker::PhantomData;
 
 /// A content provider that provides HTML content generate by a `WebPageHandler`.
-pub struct WebPageContentProvider<T: WebPageHandler> {
+pub struct WebPageContentProvider<T> {
     html_content: Vec<u8>,
     phantom: PhantomData<T>,
 }
 
 impl<T: WebPageHandler> ContentProvider for WebPageContentProvider<T> {
+    type Context = T::Context;
+
     fn from_request(
         request_info: &crate::RequestInfo,
+        context: &Self::Context,
     ) -> Result<Self, crate::ResourceHandlerError> {
-        let handler = T::from_request(request_info)?;
+        let handler = T::from_request(request_info, context)?;
         let html_content = handler.render().into_bytes();
 
         Ok(Self {

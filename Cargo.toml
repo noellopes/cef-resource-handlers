@@ -4,13 +4,13 @@ members = [".", "examples/hello"]
 default-members = ["."]
 
 [workspace.dependencies]
-cef = "152.0.0"
-cef-dll-sys = "152.0.0"
+cef = "152.3.0"
+cef-dll-sys = "152.3.0"
 
 [package]
 # Package information
 name = "cef-resource-handlers"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2024"
 
 # Package metadata

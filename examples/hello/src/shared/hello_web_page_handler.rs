@@ -36,7 +36,12 @@ pub(crate) enum HelloWebPageHandler {
 }
 
 impl WebPageHandler for HelloWebPageHandler {
-    fn from_request(request_info: &RequestInfo) -> Result<Self, ResourceHandlerError> {
+    type Context = ();
+
+    fn from_request(
+        request_info: &RequestInfo,
+        _context: &Self::Context,
+    ) -> Result<Self, ResourceHandlerError> {
         let page = WebPage::from_path(&request_info.path);
 
         let handler = match page {

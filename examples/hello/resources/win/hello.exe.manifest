@@ -14,7 +14,7 @@
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
       <!-- This tag is required for XAML islands usage in the process for media scenarios. -->
       <!-- Max version tested corresponds to the Windows 11 24H2. -->
-      <maxversiontested Id="10.0.26100.8655"/>
+      <maxversiontested Id="10.0.26100.9445"/>
     </application>
   </compatibility>
 
