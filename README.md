@@ -193,15 +193,27 @@ fn register_plain_text_scheme() {
 
 You can access values with `.get("key")`.
 
-## Example Application
+The examples show these request patterns in a complete CEF application:
 
-This repository includes an example in `examples/hello`.
+- [`examples/hello`](examples/hello/src/shared/hello_web_page_handler.rs) uses a form POST to send data from one page to another.
+- [`examples/counter`](examples/counter/src/shared/counter_web_page_handler.rs) uses query parameters to update a shared counter across requests, with `WebPageResourceHandlerFactory::register_with_context` providing the shared state.
 
-Run it:
+## Example Applications
+
+This repository includes two complete CEF applications in `examples/hello` and `examples/counter`.
+
+Run the hello example:
 
 ```bash
 cargo run -p hello --bin hello_app
 ```
+
+Run the counter example:
+
+```bash
+cargo run -p counter --bin counter_app
+```
+
 ## Upgrading from 0.1.x
 
 Version `0.2` adds shared context support and includes breaking changes to the

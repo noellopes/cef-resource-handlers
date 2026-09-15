@@ -40,3 +40,9 @@ jobs:
 
       - name: Build hello example with sandbox
         run: cargo build -p hello --features=sandbox
+
+      - name: Build counter example
+        run: cargo build -p counter --bin counter_app
+
+      - name: Clippy counter example
+        run: cargo clippy -p counter

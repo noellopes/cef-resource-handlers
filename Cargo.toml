@@ -1,6 +1,6 @@
-# The hello example is a separate workspace member and is not built by default.
+# Examples are separate workspace members and are not built by default.
 [workspace]
-members = [".", "examples/hello"]
+members = [".", "examples/hello", "examples/counter"]
 default-members = ["."]
 
 [workspace.dependencies]
