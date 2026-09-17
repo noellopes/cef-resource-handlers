@@ -1,4 +1,6 @@
 use anyhow::{Context, Result, anyhow};
+#[cfg(target_os = "windows")]
+use examples_common::build_helpers::{cargo_rerun_if_changed, embed_windows_resources};
 use std::path::{Path, PathBuf};
 
 const DEFAULT_BOOTSTRAP_VERSION: &str = "5.3.8";
@@ -6,25 +8,13 @@ const BOOTSTRAP_VERSION_FILE: &str = "bootstrap.version";
 const DOWNLOAD_TIMEOUT_SECS: u64 = 30;
 
 fn main() -> Result<()> {
+    cargo_rerun_if_changed(Path::new("Cargo.toml"));
+
     #[cfg(target_os = "windows")]
-    embed_windows_resources()?;
+    embed_windows_resources(Path::new("./resources/win/hello.rc"))?;
 
     let build_dir = build_directory()?;
     download_bootstrap_files(&build_dir)
-}
-
-#[cfg(target_os = "windows")]
-fn embed_windows_resources() -> Result<()> {
-    embed_resource::compile("./resources/win/hello.rc", embed_resource::NONE)
-        .manifest_required()
-        .context("Failed to compile Windows resources")?;
-
-    // Tell Cargo when to re-run this script
-    println!("cargo:rerun-if-changed=./resources/win/hello.rc");
-    println!("cargo:rerun-if-changed=./resources/win/hello.exe.manifest");
-    println!("cargo:rerun-if-changed=Cargo.toml");
-
-    Ok(())
 }
 
 fn build_directory() -> Result<PathBuf> {
