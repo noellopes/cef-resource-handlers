@@ -1,5 +1,5 @@
-use anyhow::{Context, Result, anyhow};
-use examples_common::build_helpers::{cargo_rerun_if_changed, embed_windows_resources};
+use anyhow::{Context, Result};
+use examples_common::build_helpers::*;
 use std::path::{Path, PathBuf};
 
 const DEFAULT_BOOTSTRAP_VERSION: &str = "5.3.8";
@@ -14,22 +14,6 @@ fn main() -> Result<()> {
 
     let build_dir = build_directory()?;
     download_bootstrap_files(&build_dir)
-}
-
-fn build_directory() -> Result<PathBuf> {
-    let out_dir = std::env::var("OUT_DIR").context("Failed to get OUT_DIR")?;
-    let out_path = Path::new(&out_dir);
-
-    for ancestor in out_path.ancestors() {
-        if ancestor.file_name() == Some(std::ffi::OsStr::new("build")) {
-            return ancestor
-                .parent()
-                .map(Path::to_path_buf)
-                .ok_or_else(|| anyhow!("Could not determine profile directory from OUT_DIR"));
-        }
-    }
-
-    anyhow::bail!("Could not find 'build' component in OUT_DIR: {out_dir}")
 }
 
 fn download_bootstrap_files(target_dir: &Path) -> Result<()> {

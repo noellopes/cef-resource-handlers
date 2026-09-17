@@ -6,4 +6,4 @@ mod build_support;
 #[cfg(target_os = "windows")]
 pub use win::embed_windows_resources;
 
-pub use build_support::cargo_rerun_if_changed;
+pub use build_support::{build_directory, cargo_rerun_if_changed};
