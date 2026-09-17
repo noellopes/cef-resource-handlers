@@ -1,6 +1,9 @@
 use cef::*;
 use examples_common::startup::initialize_cef;
 
+#[cfg(target_os = "macos")]
+use examples_common::mac::{setup_simple_app_delegate, setup_simple_application};
+
 pub(crate) mod hello_app;
 pub(crate) mod hello_handler;
 pub(crate) mod hello_schemes;
@@ -22,7 +25,7 @@ pub(crate) fn load_cef() -> Result<Library, anyhow::Error> {
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
 
     #[cfg(target_os = "macos")]
-    crate::mac::setup_hello_application();
+    setup_simple_application();
 
     Ok(library)
 }
@@ -65,7 +68,7 @@ pub(crate) fn run_main(
         initialize_cef(main_args, &mut app, sandbox_info)?;
 
         #[cfg(target_os = "macos")]
-        let _delegate = crate::mac::setup_hello_app_delegate();
+        let _delegate = setup_simple_app_delegate();
 
         run_message_loop();
 

@@ -6,9 +6,6 @@
 #[cfg(not(all(feature = "sandbox", target_os = "windows")))]
 mod shared;
 
-#[cfg(target_os = "macos")]
-mod mac;
-
 #[cfg(not(all(feature = "sandbox", target_os = "windows")))]
 fn main() -> anyhow::Result<()> {
     #[allow(clippy::let_unit_value)]
