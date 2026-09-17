@@ -56,4 +56,3 @@ x11-dl = { version = "2.21.0", optional = true }
 [build-dependencies]
 anyhow = "1.0.104"
 examples-common = { path = "../common" }
-ureq = "3.4.2"
