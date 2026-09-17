@@ -30,6 +30,7 @@ anyhow = "1.0.104"
 cef = { workspace = true, features = ["build-util"] }
 cef-dll-sys.workspace = true
 cef-resource-handlers = { path = "../.." }
+examples-common = { path = "../common" }
 maud = "0.27.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]

@@ -9,5 +9,6 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "1.0.104"
+cef.workspace = true
 embed-resource = "3.0.11"
 ureq = "3.4.2"

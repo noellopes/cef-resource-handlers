@@ -1,5 +1,5 @@
-use anyhow::anyhow;
 use cef::*;
+use examples_common::startup::initialize_cef;
 
 pub(crate) mod hello_app;
 pub(crate) mod hello_handler;
@@ -73,20 +73,4 @@ pub(crate) fn run_main(
     }
 
     Ok(())
-}
-
-fn initialize_cef(
-    main_args: &MainArgs,
-    app: &mut App,
-    sandbox_info: *mut u8,
-) -> anyhow::Result<()> {
-    let settings = Settings {
-        no_sandbox: sandbox_info.is_null() as _,
-        ..Default::default()
-    };
-
-    match initialize(Some(main_args), Some(&settings), Some(app), sandbox_info) {
-        1 => Ok(()), // true
-        code => Err(anyhow!("Failed to initialize CEF with code: {code}")),
-    }
 }
