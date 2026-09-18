@@ -8,15 +8,19 @@ mod shared;
 
 #[cfg(not(all(feature = "sandbox", target_os = "windows")))]
 fn main() -> anyhow::Result<()> {
+    use common::startup::{load_cef, run_main};
+
     #[allow(clippy::let_unit_value)]
-    let _library = shared::load_cef()?;
+    let _library = load_cef()?;
 
     let args = cef::args::Args::new();
     let Some(cmd_line) = args.as_cmd_line() else {
         anyhow::bail!("Failed to parse command line arguments");
     };
+    let args = args.as_main_args();
 
-    shared::run_main(args.as_main_args(), &cmd_line, std::ptr::null_mut())
+    let mut app = shared::counter_app::CounterApp::new();
+    run_main(&mut app, args, &cmd_line, std::ptr::null_mut())
 }
 
 #[cfg(all(feature = "sandbox", target_os = "windows"))]

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use examples_common::build_helpers::*;
+use common::build_helpers::*;
 use std::path::Path;
 
 fn main() -> Result<()> {
