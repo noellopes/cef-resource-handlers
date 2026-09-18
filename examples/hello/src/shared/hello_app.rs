@@ -1,12 +1,10 @@
-use super::hello_schemes::*;
 use super::hello_web_page_handler::*;
 use cef::*;
-use cef_dll_sys::*;
 use cef_resource_handlers::*;
 use common::app_handler::*;
 use common::default_app_delegates::{DefaultAppBrowserViewDelegate, DefaultAppWindowDelegate};
+use common::schemes::*;
 use std::cell::RefCell;
-use std::os::raw::c_int;
 
 wrap_app! {
     pub(crate) struct HelloApp;
@@ -17,19 +15,7 @@ wrap_app! {
         }
 
         fn on_register_custom_schemes(&self, registrar: Option<&mut SchemeRegistrar>) {
-            let Some(registrar) = registrar else {
-                eprintln!("Warning: Failed to register custom schemes, registrar is None.");
-                return;
-            };
-
-            let options = cef_scheme_options_t::CEF_SCHEME_OPTION_STANDARD as c_int
-                | cef_scheme_options_t::CEF_SCHEME_OPTION_SECURE as c_int
-                | cef_scheme_options_t::CEF_SCHEME_OPTION_CORS_ENABLED as c_int;
-
-            let local_file_scheme = CefString::from(LOCAL_FILE_SCHEME);
-            if registrar.add_custom_scheme(Some(&local_file_scheme), options) == false as c_int {
-                eprintln!("Warning: Failed to register {LOCAL_FILE_SCHEME} scheme.");
-            }
+            register_local_file_scheme(registrar);
         }
     }
 }

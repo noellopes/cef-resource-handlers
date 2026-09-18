@@ -1,5 +1,5 @@
-use super::hello_schemes::*;
 use cef_resource_handlers::*;
+use common::schemes::{APP_SCHEME, LOCAL_FILE_SCHEME};
 use maud::{Markup, Render, html};
 
 #[derive(Debug, Clone, PartialEq)]
