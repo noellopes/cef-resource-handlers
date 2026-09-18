@@ -1,4 +1,4 @@
-use crate::shared::simple_handler::*;
+use crate::app_handler::AppHandler;
 use cef::application_mac::{CefAppProtocol, CrAppControlProtocol, CrAppProtocol};
 use objc2::{
     ClassType, DefinedClass, MainThreadMarker, MainThreadOnly, define_class, extern_methods,
@@ -17,18 +17,18 @@ use std::{cell::Cell, ptr};
 define_class! {
     #[unsafe(super(NSObject))]
     #[thread_kind = MainThreadOnly]
-    pub struct SimpleAppDelegate;
+    pub struct AppDelegate;
 
-    impl SimpleAppDelegate {
+    impl AppDelegate {
         /// Create the application on the UI thread.
         #[unsafe(method(createApplication:))]
         unsafe fn create_application(&self, _object: Option<&AnyObject>) {
             let app = NSApp(MainThreadMarker::new().expect("Not running on the main thread"));
-            assert!(app.isKindOfClass(SimpleApplication::class()));
+            assert!(app.isKindOfClass(Application::class()));
             assert!(
                 app.delegate()
                     .unwrap()
-                    .isKindOfClass(SimpleAppDelegate::class())
+                    .isKindOfClass(AppDelegate::class())
             );
 
             let main_bundle = NSBundle::mainBundle();
@@ -40,9 +40,9 @@ define_class! {
         }
     }
 
-    unsafe impl NSObjectProtocol for SimpleAppDelegate {}
+    unsafe impl NSObjectProtocol for AppDelegate {}
 
-    unsafe impl NSApplicationDelegate for SimpleAppDelegate {
+    unsafe impl NSApplicationDelegate for AppDelegate {
         #[unsafe(method(applicationShouldTerminate:))]
         unsafe fn application_should_terminate(&self, _sender: &NSApplication) -> NSApplicationTerminateReply {
             NSApplicationTerminateReply::TerminateNow
@@ -52,8 +52,8 @@ define_class! {
         /// already running.
         #[unsafe(method(applicationShouldHandleReopen:hasVisibleWindows:))]
         unsafe fn application_should_handle_reopen(&self, _sender: &NSApplication, _has_visible_windows: Bool) -> Bool {
-            if let Some(handler) = SimpleHandler::instance() {
-                let mut handler = handler.lock().expect("Failed to lock SimpleHandler");
+            if let Some(handler) = AppHandler::instance() {
+                let mut handler = handler.lock().expect("Failed to lock AppHandler");
                 if !handler.is_closing() {
                     handler.show_main_window();
                 }
@@ -71,7 +71,7 @@ define_class! {
         }
     }
 
-    unsafe impl NSUserInterfaceValidations for SimpleAppDelegate {
+    unsafe impl NSUserInterfaceValidations for AppDelegate {
         #[unsafe(method(validateUserInterfaceItem:))]
         unsafe fn validate_user_interface_item(&self, item: &ProtocolObject<dyn NSValidatedUserInterfaceItem>) -> Bool {
             const IDC_FIND: isize = 37000;
@@ -86,16 +86,16 @@ define_class! {
     }
 }
 
-impl SimpleAppDelegate {
+impl AppDelegate {
     fn new(mtm: MainThreadMarker) -> Retained<Self> {
-        let this = SimpleAppDelegate::alloc(mtm).set_ivars(());
+        let this = AppDelegate::alloc(mtm).set_ivars(());
         unsafe { msg_send![super(this), init] }
     }
 }
 
-/// Instance variables of `SimpleApplication`.
+/// Instance variables of `Application`.
 #[derive(Default)]
-pub struct SimpleApplicationIvars {
+pub struct ApplicationIvars {
     handling_send_event: Cell<Bool>,
 }
 
@@ -105,10 +105,10 @@ define_class!(
     /// This class provides the necessary `CefAppProtocol` conformance to
     /// ensure that events are handled correctly by the Chromium framework on macOS.
     #[unsafe(super(NSApplication))]
-    #[ivars = SimpleApplicationIvars]
-    pub struct SimpleApplication;
+    #[ivars = ApplicationIvars]
+    pub struct Application;
 
-    impl SimpleApplication {
+    impl Application {
         #[unsafe(method(sendEvent:))]
         unsafe fn send_event(&self, event: &NSEvent) {
             let was_sending_event = self.is_handling_send_event();
@@ -162,8 +162,8 @@ define_class!(
         /// leading to it must be redirected.
         #[unsafe(method(terminate:))]
         unsafe fn terminate(&self, _sender: &AnyObject) {
-            if let Some(handler) = SimpleHandler::instance() {
-                let mut handler = handler.lock().expect("Failed to lock SimpleHandler");
+            if let Some(handler) = AppHandler::instance() {
+                let mut handler = handler.lock().expect("Failed to lock AppHandler");
                 if !handler.is_closing() {
                     handler.close_all_browsers(false);
                 }
@@ -171,24 +171,24 @@ define_class!(
         }
     }
 
-    unsafe impl CrAppControlProtocol for SimpleApplication {
+    unsafe impl CrAppControlProtocol for Application {
         #[unsafe(method(setHandlingSendEvent:))]
         unsafe fn _set_handling_send_event(&self, handling_send_event: Bool) {
             self.ivars().handling_send_event.set(handling_send_event);
         }
     }
 
-    unsafe impl CrAppProtocol for SimpleApplication {
+    unsafe impl CrAppProtocol for Application {
         #[unsafe(method(isHandlingSendEvent))]
         unsafe fn _is_handling_send_event(&self) -> Bool {
             self.ivars().handling_send_event.get()
         }
     }
 
-    unsafe impl CefAppProtocol for SimpleApplication {}
+    unsafe impl CefAppProtocol for Application {}
 );
 
-impl SimpleApplication {
+impl Application {
     extern_methods! {
         #[unsafe(method(sharedApplication))]
         fn shared_application() -> Retained<Self>;
@@ -201,43 +201,39 @@ impl SimpleApplication {
     }
 }
 
-pub fn setup_simple_application() {
-    // Initialize the SimpleApplication instance.
+pub fn setup_application() {
+    // Initialize the Application instance.
     // SAFETY: mtm ensures that here is the main thread.
-    let _ = SimpleApplication::shared_application();
+    let _ = Application::shared_application();
 
     // If there was an invocation to NSApp prior to here,
-    // then the NSApp will not be a SimpleApplication.
+    // then the NSApp will not be a Application.
     // The following assertion ensures that this doesn't happen.
     assert!(
         NSApp(MainThreadMarker::new().expect("Not running on the main thread"))
-            .isKindOfClass(SimpleApplication::class())
+            .isKindOfClass(Application::class())
     );
 }
 
-pub fn setup_simple_app_delegate() -> Retained<SimpleAppDelegate> {
+pub fn setup_app_delegate() -> Retained<AppDelegate> {
     let mtm = MainThreadMarker::new().expect("Not running on the main thread");
 
     // Create the application delegate.
-    let simple_delegate = SimpleAppDelegate::new(mtm);
+    let app_delegate = AppDelegate::new(mtm);
     let delegate_proto =
-        ProtocolObject::<dyn NSApplicationDelegate>::from_retained(simple_delegate.clone());
+        ProtocolObject::<dyn NSApplicationDelegate>::from_retained(app_delegate.clone());
     let app = NSApp(MainThreadMarker::new().expect("Not running on the main thread"));
-    assert!(app.isKindOfClass(SimpleApplication::class()));
+    assert!(app.isKindOfClass(Application::class()));
     app.setDelegate(Some(&delegate_proto));
-    assert!(
-        app.delegate()
-            .unwrap()
-            .isKindOfClass(SimpleAppDelegate::class())
-    );
+    assert!(app.delegate().unwrap().isKindOfClass(AppDelegate::class()));
 
     unsafe {
-        simple_delegate.performSelectorOnMainThread_withObject_waitUntilDone(
+        app_delegate.performSelectorOnMainThread_withObject_waitUntilDone(
             sel!(createApplication:),
             None,
             false,
         );
     }
 
-    simple_delegate
+    app_delegate
 }

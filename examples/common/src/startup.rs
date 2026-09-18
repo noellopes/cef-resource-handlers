@@ -2,6 +2,9 @@ use anyhow::{Result, anyhow};
 use cef::*;
 
 #[cfg(target_os = "macos")]
+use crate::mac::{setup_app_delegate, setup_application};
+
+#[cfg(target_os = "macos")]
 pub type Library = library_loader::LibraryLoader;
 
 #[cfg(not(target_os = "macos"))]
@@ -17,7 +20,7 @@ pub fn load_cef() -> Result<Library, anyhow::Error> {
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
 
     #[cfg(target_os = "macos")]
-    setup_simple_application();
+    setup_application();
 
     Ok(library)
 }
@@ -60,7 +63,7 @@ pub fn run_main(
         initialize_cef(main_args, &mut *app, sandbox_info)?;
 
         #[cfg(target_os = "macos")]
-        let _delegate = setup_simple_app_delegate();
+        let _delegate = setup_app_delegate();
 
         run_message_loop();
 
