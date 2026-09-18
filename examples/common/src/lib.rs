@@ -5,6 +5,7 @@ pub mod build_helpers;
 pub mod default_app_delegates;
 pub mod schemes;
 pub mod startup;
+pub mod web_page;
 
 #[cfg(target_os = "macos")]
 pub mod mac;
