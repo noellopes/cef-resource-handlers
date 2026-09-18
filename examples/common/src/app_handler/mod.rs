@@ -22,9 +22,9 @@ mod linux;
 #[cfg(target_os = "linux")]
 use linux::*;
 
-static COUNTER_HANDLER_INSTANCE: OnceLock<Weak<Mutex<CounterHandler>>> = OnceLock::new();
+static APP_HANDLER_INSTANCE: OnceLock<Weak<Mutex<AppHandler>>> = OnceLock::new();
 
-pub struct CounterHandler {
+pub struct AppHandler {
     is_alloy_style: bool,
     browser_list: Vec<Browser>,
     #[cfg(target_os = "macos")]
@@ -33,17 +33,15 @@ pub struct CounterHandler {
     weak_self: Weak<Mutex<Self>>,
 }
 
-impl CounterHandler {
+impl AppHandler {
     #[cfg(target_os = "macos")]
     pub fn instance() -> Option<Arc<Mutex<Self>>> {
-        COUNTER_HANDLER_INSTANCE
-            .get()
-            .and_then(|weak| weak.upgrade())
+        APP_HANDLER_INSTANCE.get().and_then(|weak| weak.upgrade())
     }
 
     pub fn new(is_alloy_style: bool) -> Arc<Mutex<Self>> {
         Arc::new_cyclic(|weak| {
-            if let Err(instance) = COUNTER_HANDLER_INSTANCE.set(weak.clone()) {
+            if let Err(instance) = APP_HANDLER_INSTANCE.set(weak.clone()) {
                 assert_eq!(instance.strong_count(), 0, "Replacing a viable instance");
             }
 
@@ -76,7 +74,6 @@ impl CounterHandler {
 
         let browser = browser.cloned().expect("Browser is None");
 
-        // Sanity-check the configured runtime style.
         assert_eq!(
             browser.host().expect("BrowserHost is None").runtime_style(),
             if self.is_alloy_style {
@@ -86,31 +83,23 @@ impl CounterHandler {
             }
         );
 
-        // Add to the list of existing browsers.
         self.browser_list.push(browser);
     }
 
     fn do_close(&mut self, _browser: Option<&mut Browser>) -> bool {
         debug_assert_ne!(currently_on(ThreadId::UI), 0);
 
-        // Closing the main window requires special handling. See the DoClose()
-        // documentation in the CEF header for a detailed destription of this
-        // process.
         #[cfg(target_os = "macos")]
         if self.browser_list.len() == 1 {
-            // Set a flag to indicate that the window close should be allowed.
             self.is_closing = true;
         }
 
-        // Allow the close. For windowed browsers this will result in the OS close
-        // event being sent.
         false
     }
 
     fn on_before_close(&mut self, browser: Option<&mut Browser>) {
         debug_assert_ne!(currently_on(ThreadId::UI), 0);
 
-        // Remove from the list of existing browsers.
         let mut browser = browser.cloned().expect("Browser is None");
         if let Some(index) = self
             .browser_list
@@ -121,7 +110,6 @@ impl CounterHandler {
         }
 
         if self.browser_list.is_empty() {
-            // All browser windows have closed. Quit the application message loop.
             quit_message_loop();
         }
     }
@@ -136,12 +124,10 @@ impl CounterHandler {
     ) {
         debug_assert_ne!(currently_on(ThreadId::UI), 0);
 
-        // Allow Chrome to show the error page.
         if !self.is_alloy_style {
             return;
         }
 
-        // Don't display an error for downloaded files.
         let error_code = sys::cef_errorcode_t::from(error_code);
         if error_code == sys::cef_errorcode_t::ERR_ABORTED {
             return;
@@ -149,8 +135,6 @@ impl CounterHandler {
         let error_code = error_code as i32;
 
         let frame = frame.expect("Frame is None");
-
-        // Display a load error message using a data: URI.
         let error_text = error_text.map(CefString::to_string).unwrap_or_default();
         let failed_url = failed_url.map(CefString::to_string).unwrap_or_default();
         let data = format!(
@@ -172,11 +156,10 @@ impl CounterHandler {
     pub fn show_main_window(&mut self) {
         let thread_id = ThreadId::UI;
         if currently_on(thread_id) == 0 {
-            // Execute on the UI thread.
             let this = self
                 .weak_self
                 .upgrade()
-                .expect("Weak reference to CounterHandler is None");
+                .expect("Weak reference to AppHandler is None");
             let mut task = ShowMainWindow::new(this);
             post_task(thread_id, Some(&mut task));
             return;
@@ -187,12 +170,10 @@ impl CounterHandler {
         };
 
         if let Some(browser_view) = browser_view_get_for_browser(Some(&mut main_browser)) {
-            // Show the window using the Views framework.
             if let Some(window) = browser_view.window() {
                 window.show();
             }
         } else if self.is_alloy_style {
-            #[cfg(target_os = "macos")]
             platform_show_window(Some(&mut main_browser));
         }
     }
@@ -201,11 +182,10 @@ impl CounterHandler {
     pub fn close_all_browsers(&mut self, force_close: bool) {
         let thread_id = ThreadId::UI;
         if currently_on(thread_id) == 0 {
-            // Execute on the UI thread.
             let this = self
                 .weak_self
                 .upgrade()
-                .expect("Weak reference to CounterHandler is None");
+                .expect("Weak reference to AppHandler is None");
             let mut task = CloseAllBrowsers::new(this, force_close);
             post_task(thread_id, Some(&mut task));
             return;
@@ -224,28 +204,28 @@ impl CounterHandler {
 }
 
 wrap_client! {
-    pub struct CounterHandlerClient {
-        inner: Arc<Mutex<CounterHandler>>,
+    pub struct AppHandlerClient {
+        inner: Arc<Mutex<AppHandler>>,
     }
 
     impl Client {
         fn display_handler(&self) -> Option<DisplayHandler> {
-            Some(CounterHandlerDisplayHandler::new(self.inner.clone()))
+            Some(AppHandlerDisplayHandler::new(self.inner.clone()))
         }
 
         fn life_span_handler(&self) -> Option<LifeSpanHandler> {
-            Some(CounterHandlerLifeSpanHandler::new(self.inner.clone()))
+            Some(AppHandlerLifeSpanHandler::new(self.inner.clone()))
         }
 
         fn load_handler(&self) -> Option<LoadHandler> {
-            Some(CounterHandlerLoadHandler::new(self.inner.clone()))
+            Some(AppHandlerLoadHandler::new(self.inner.clone()))
         }
     }
 }
 
 wrap_display_handler! {
-    struct CounterHandlerDisplayHandler {
-        inner: Arc<Mutex<CounterHandler>>,
+    struct AppHandlerDisplayHandler {
+        inner: Arc<Mutex<AppHandler>>,
     }
 
     impl DisplayHandler {
@@ -257,8 +237,8 @@ wrap_display_handler! {
 }
 
 wrap_life_span_handler! {
-    struct CounterHandlerLifeSpanHandler {
-        inner: Arc<Mutex<CounterHandler>>,
+    struct AppHandlerLifeSpanHandler {
+        inner: Arc<Mutex<AppHandler>>,
     }
 
     impl LifeSpanHandler {
@@ -280,8 +260,8 @@ wrap_life_span_handler! {
 }
 
 wrap_load_handler! {
-    struct CounterHandlerLoadHandler {
-        inner: Arc<Mutex<CounterHandler>>,
+    struct AppHandlerLoadHandler {
+        inner: Arc<Mutex<AppHandler>>,
     }
 
     impl LoadHandler {
@@ -302,7 +282,7 @@ wrap_load_handler! {
 #[cfg(target_os = "macos")]
 wrap_task! {
     struct ShowMainWindow {
-        inner: Arc<Mutex<CounterHandler>>,
+        inner: Arc<Mutex<AppHandler>>,
     }
 
     impl Task {
@@ -318,7 +298,7 @@ wrap_task! {
 #[cfg(target_os = "macos")]
 wrap_task! {
     struct CloseAllBrowsers {
-        inner: Arc<Mutex<CounterHandler>>,
+        inner: Arc<Mutex<AppHandler>>,
         force_close: bool,
     }
 

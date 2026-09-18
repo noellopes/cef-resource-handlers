@@ -20,7 +20,7 @@ name = "hello_helper"
 
 [features]
 sandbox = ["cef/sandbox"]
-linux-x11 = ["x11-dl"]
+linux-x11 = ["common/linux-x11"]
 
 [package.metadata.bootstrap]
 version = "5.3.8"

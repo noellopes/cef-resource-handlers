@@ -1,9 +1,9 @@
-use super::hello_handler::*;
 use super::hello_schemes::*;
 use super::hello_web_page_handler::*;
 use cef::*;
 use cef_dll_sys::*;
 use cef_resource_handlers::*;
+use common::app_handler::*;
 use std::cell::RefCell;
 use std::os::raw::c_int;
 
@@ -159,9 +159,9 @@ wrap_browser_process_handler! {
             };
 
             {
-                // HelloHandler implements browser-level callbacks.
+                // AppHandler implements browser-level callbacks.
                 let mut client = self.client.borrow_mut();
-                *client = Some(HelloHandlerClient::new(HelloHandler::new(use_alloy_style)));
+                *client = Some(AppHandlerClient::new(AppHandler::new(use_alloy_style)));
             }
 
             // Specify CEF browser settings here.

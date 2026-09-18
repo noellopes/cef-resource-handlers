@@ -1,4 +1,4 @@
-use super::counter_handler::*;
+use common::app_handler::*;
 use super::counter_schemes::*;
 use super::counter_web_page_handler::*;
 use cef::*;
@@ -160,9 +160,9 @@ wrap_browser_process_handler! {
             };
 
             {
-                // CounterHandler implements browser-level callbacks.
+                // AppHandler implements browser-level callbacks.
                 let mut client = self.client.borrow_mut();
-                *client = Some(CounterHandlerClient::new(CounterHandler::new(use_alloy_style)));
+                *client = Some(AppHandlerClient::new(AppHandler::new(use_alloy_style)));
             }
 
             // Specify CEF browser settings here.
