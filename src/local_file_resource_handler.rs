@@ -27,15 +27,13 @@ impl LocalFileContentProvider {
         PathBuf::from(file_path)
     }
 
-    fn file_size(file_path: &Path) -> Option<usize> {
-        std::fs::metadata(file_path)
-            .ok()
-            .map(|metadata| metadata.len() as usize)
+    fn file_size(file: &File) -> Option<usize> {
+        file.metadata().ok().map(|metadata| metadata.len() as usize)
     }
 
     fn from_file_path(file_path: &Path) -> Result<Self, std::io::Error> {
-        let file_size = Self::file_size(file_path);
         let file = File::open(file_path)?;
+        let file_size = Self::file_size(&file);
         let mime_type = mime_guess::from_path(file_path)
             .first_or_octet_stream()
             .to_string();
