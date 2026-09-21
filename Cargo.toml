@@ -1,16 +1,22 @@
 # Examples are separate workspace members and are not built by default.
 [workspace]
-members = [".", "examples/common", "examples/hello", "examples/counter"]
+members = [
+    ".",
+    "examples/common",
+    "examples/common_build",
+    "examples/hello",
+    "examples/counter",
+]
 default-members = ["."]
 
 [workspace.dependencies]
-cef = "152.3.0"
-cef-dll-sys = "152.3.0"
+cef = "152.4.0"
+cef-dll-sys = "152.4.0"
 
 [package]
 # Package information
 name = "cef-resource-handlers"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 
 # Package metadata

@@ -10,9 +10,7 @@ path = "src/lib.rs"
 [dependencies]
 anyhow = "1.0.104"
 cef.workspace = true
-embed-resource = "3.0.11"
 maud = "0.27.0"
-ureq = "3.4.2"
 
 [features]
 linux-x11 = ["dep:x11-dl"]

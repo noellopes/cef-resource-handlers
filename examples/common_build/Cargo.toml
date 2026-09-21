@@ -1,0 +1,15 @@
+[package]
+name = "examples-common-build"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = "1.0.104"
+ureq = "3.4.2"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+embed-resource = "3.0.11"
