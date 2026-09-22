@@ -4,11 +4,22 @@ use std::path::PathBuf;
 const DOWNLOAD_TIMEOUT_SECS: u64 = 30;
 
 pub(crate) struct DownloadRequest {
-    pub(crate) source_url: String,
-    pub(crate) target_path: PathBuf,
+    source_url: String,
+    target_path: PathBuf,
 }
 
 impl DownloadRequest {
+    pub(crate) fn new(source_url: String, target_path: PathBuf) -> Self {
+        Self {
+            source_url,
+            target_path,
+        }
+    }
+
+    pub(crate) fn target_exists(&self) -> bool {
+        self.target_path.exists()
+    }
+
     pub(crate) fn download(&self) -> Result<()> {
         eprintln!("Downloading {}", self.source_url);
 

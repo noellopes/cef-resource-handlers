@@ -13,7 +13,7 @@ pub fn download_bootstrap_files(target_dir: &Path) -> Result<()> {
     for file_type in ["js", "css"] {
         let file = bootstrap_file_request(&version, file_type, target_dir);
 
-        if !is_up_to_date || !file.target_path.exists() {
+        if !is_up_to_date || !file.target_exists() {
             file.download()?;
         }
     }
@@ -41,11 +41,9 @@ fn bootstrap_file_request(
     target_dir: &Path,
 ) -> DownloadRequest {
     let file_name = format!("bootstrap.min.{file_type}");
+    let source_url = format!(
+        "https://cdn.jsdelivr.net/npm/bootstrap@{bootstrap_version}/dist/{file_type}/{file_name}"
+    );
 
-    DownloadRequest {
-        source_url: format!(
-            "https://cdn.jsdelivr.net/npm/bootstrap@{bootstrap_version}/dist/{file_type}/{file_name}"
-        ),
-        target_path: target_dir.join(&file_name),
-    }
+    DownloadRequest::new(source_url, target_dir.join(&file_name))
 }
