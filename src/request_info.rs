@@ -1,6 +1,5 @@
 use crate::ResourceHandlerError;
-use cef::{ImplPostData, ImplPostDataElement, ImplRequest};
-use cef_dll_sys::cef_postdataelement_type_t;
+use cef::{sys::cef_postdataelement_type_t, ImplPostData, ImplPostDataElement, ImplRequest};
 use std::collections::HashMap;
 
 /// A collection of key-value request values.

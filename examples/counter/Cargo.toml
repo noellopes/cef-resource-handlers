@@ -28,7 +28,6 @@ version = "5.3.8"
 [dependencies]
 anyhow = "1.0.104"
 cef = { workspace = true, features = ["build-util"] }
-cef-dll-sys.workspace = true
 cef-resource-handlers = { path = "../.." }
 common = { package = "examples-common", path = "../common" }
 maud = "0.27.0"
