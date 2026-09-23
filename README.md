@@ -30,7 +30,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cef-resource-handlers = "0.2"
+cef-resource-handlers = "0.2.1"
 ```
 
 ## Quick Start
@@ -74,6 +74,14 @@ fn register_handlers() {
 ```
 
 Then URLs like `local://bootstrap.min.css` can be served from files relative to the executable directory.
+
+Choose a factory based on how the response is produced:
+
+| Factory | Response |
+| --- | --- |
+| `LocalFileResourceHandlerFactory` | A local file. |
+| `WebPageResourceHandlerFactory<T>` | Dynamically rendered HTML from a `WebPageHandler`. |
+| `CustomResourceHandlerFactory<T>` | Custom metadata, byte streaming, or a non-HTML resource. |
 
 ## Dynamic HTML Pages
 
@@ -236,8 +244,8 @@ impl WebPageHandler for MyPage {
 
 The same change applies to `ContentProvider`. For shared state, replace
 `register` with `register_with_context` and pass a `Clone + Send + Sync + 'static`
-context. Version `0.2` also updates the CEF dependencies from `152.0.0` to
-`152.3.0`; align any directly pinned CEF dependencies in your application.
+context. The current `0.2.1` release uses CEF `154.0.0`; align any directly
+pinned CEF dependencies in your application.
 
 ## License
 
