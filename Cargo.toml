@@ -10,7 +10,7 @@ members = [
 default-members = ["."]
 
 [workspace.dependencies]
-cef = "152.4.0"
+cef = "154.0.0"
 
 [package]
 # Package information
